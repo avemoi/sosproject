@@ -45,7 +45,7 @@ func main() {
 	gin.SetMode(gin.ReleaseMode)
 	var cfg config
 	cfg.env = "development"
-	cfg.db.dsn = "root:mypassword@tcp(127.0.0.1:3306)/sosprojectdb?parseTime=true"
+	cfg.db.dsn = "root:mypassword@tcp(127.0.0.1:3307)/sosprojectdb?parseTime=true"
 
 	conn, err := openDB(cfg)
 
@@ -57,6 +57,6 @@ func main() {
 
 	repo := NewRepo(db.New(conn))
 	router := repo.GetRoutes()
-	router.Run()
+	router.Run(":8082")
 
 }
