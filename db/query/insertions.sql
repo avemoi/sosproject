@@ -2,15 +2,9 @@
 
 -- noinspection SqlNoDataSourceInspectionForFile
 
--- name: CreateInsidentType :execresult
-INSERT INTO incident_type (
-    name
-) VALUES (?);
-
 -- name: CreateInsident :execresult
 INSERT INTO incident (
-    longtitude,
+    power_id,
     latitude,
-    incident_type_id
-
+    longtitude
 ) VALUES (?, ?, ?);
