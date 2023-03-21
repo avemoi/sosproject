@@ -2,14 +2,13 @@ package main
 
 import "github.com/gin-gonic/gin"
 
-func (r *repo) GetRoutes() *gin.Engine {
+func (app *Config) GetRoutes() *gin.Engine {
 	router := gin.Default()
 	incident := router.Group("/incident", TokenAuthentication())
 	{
-		incident.GET("/type/all", r.getInsidentTypes)
-		incident.POST("/type", r.postInsidentType)
-		incident.GET("/all", r.getIncidents)
-		incident.POST("/", r.postInsident)
+		incident.GET("/all", app.getIncidents)
+		incident.POST("/", app.postInsident)
+		incident.POST("/authentication", app.UserAuthentication)
 	}
 
 	return router

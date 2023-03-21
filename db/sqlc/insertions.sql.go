@@ -14,20 +14,30 @@ const createInsident = `-- name: CreateInsident :execresult
 
 
 INSERT INTO incident (
+    user_id
+) VALUES (?)
+`
+
+// noinspection SqlDialectInspectionForFile
+// noinspection SqlNoDataSourceInspectionForFile
+func (q *Queries) CreateInsident(ctx context.Context, userID sql.NullInt64) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createInsident, userID)
+}
+
+const createUser = `-- name: CreateUser :execresult
+INSERT into users (
     power_id,
     latitude,
     longtitude
 ) VALUES (?, ?, ?)
 `
 
-type CreateInsidentParams struct {
+type CreateUserParams struct {
 	PowerID    int32   `json:"power_id"`
 	Latitude   float64 `json:"latitude"`
 	Longtitude float64 `json:"longtitude"`
 }
 
-// noinspection SqlDialectInspectionForFile
-// noinspection SqlNoDataSourceInspectionForFile
-func (q *Queries) CreateInsident(ctx context.Context, arg CreateInsidentParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createInsident, arg.PowerID, arg.Latitude, arg.Longtitude)
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Result, error) {
+	return q.db.ExecContext(ctx, createUser, arg.PowerID, arg.Latitude, arg.Longtitude)
 }

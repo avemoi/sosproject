@@ -1,69 +1,96 @@
 package main
 
 import (
-	"context"
 	"database/sql"
+	"fmt"
 	db "github.com/avemoi/sosproject/db/sqlc"
 	"github.com/gin-gonic/gin"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"os"
+	"sync"
 	"time"
 )
 
-type config struct {
-	port int
-	env  string
-	db   struct {
-		dsn string
-	}
-}
-
-func openDB(cfg config) (*sql.DB, error) {
-	conn, err := sql.Open("mysql", cfg.db.dsn)
-	if err != nil {
-		return nil, err
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	err = conn.PingContext(ctx)
-	if err != nil {
-		return nil, err
-	}
-	return conn, nil
-}
-
-type repo struct {
-	db *db.Queries
-}
-
-func NewRepo(db *db.Queries) *repo {
-	return &repo{db: db}
-}
-
 func main() {
-	var ginMode string
-	if os.Getenv("release") == "true" {
-		ginMode = gin.ReleaseMode
-	} else {
-		ginMode = gin.DebugMode
-	}
-	gin.SetMode(ginMode)
-	var cfg config
-	cfg.env = "development"
-	cfg.db.dsn = "root:mypassword@tcp(127.0.0.1:3308)/sosprojectdb?parseTime=true"
 
-	conn, err := openDB(cfg)
+	connDB := initDB()
+
+	defer func(connDB *sql.DB) {
+		err := connDB.Close()
+		if err != nil {
+			log.Panicln(err)
+		}
+	}(connDB)
+
+	wg := sync.WaitGroup{}
+
+	// set up the application config
+	app := Config{
+		DB:           connDB,
+		Wait:         &wg,
+		GoogleApiKey: os.Getenv("GOOGLE_API"),
+	}
+
+	if os.Getenv("release") == "true" {
+		app.env = gin.ReleaseMode
+	} else {
+		app.env = gin.DebugMode
+	}
+	gin.SetMode(app.env)
+
+	app.Models = NewRepo(db.New(connDB))
+
+	router := app.GetRoutes()
+	router.Run(fmt.Sprintf(":%s", os.Getenv("GINPORT")))
+
+}
+
+func initDB() *sql.DB {
+	conn := connectToDB()
+	if conn == nil {
+		log.Panic("Can not connect to database")
+	}
+	return conn
+}
+
+func connectToDB() *sql.DB {
+	counts := 0
+
+	dsn := os.Getenv("DSN")
+	fmt.Println("Tryting to ", dsn)
+
+	for {
+		connection, err := openDB(dsn)
+		if err != nil {
+			log.Println("mysql not yet ready")
+		} else {
+			log.Println("Connected to datbaase")
+			return connection
+		}
+
+		if counts > 10 {
+			return nil
+		}
+		log.Println("backing off for 1 seconds")
+		time.Sleep(1 * time.Second)
+		counts++
+		continue
+	}
+}
+
+func openDB(dsn string) (*sql.DB, error) {
+	mydb, err := sql.Open("mysql", dsn)
+	fmt.Println("trying wiht", dsn)
+	if err != nil {
+		return nil, err
+	}
+	err = mydb.Ping()
 
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
-	defer conn.Close()
-
-	repo := NewRepo(db.New(conn))
-	router := repo.GetRoutes()
-	router.Run(":8082")
+	return mydb, nil
 
 }

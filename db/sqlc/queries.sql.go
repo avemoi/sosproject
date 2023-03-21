@@ -9,11 +9,29 @@ import (
 	"context"
 )
 
+const getUser = `-- name: GetUser :one
+SELECT power_id, latitude, longtitude
+from users where id = ? LIMIT 1
+`
+
+type GetUserRow struct {
+	PowerID    int32   `json:"power_id"`
+	Latitude   float64 `json:"latitude"`
+	Longtitude float64 `json:"longtitude"`
+}
+
+func (q *Queries) GetUser(ctx context.Context, id int64) (GetUserRow, error) {
+	row := q.db.QueryRowContext(ctx, getUser, id)
+	var i GetUserRow
+	err := row.Scan(&i.PowerID, &i.Latitude, &i.Longtitude)
+	return i, err
+}
+
 const listIncidents = `-- name: ListIncidents :many
 
 
 
-SELECT id, power_id, latitude, longtitude, created_at, updated_at FROM incident
+SELECT id, created_at, updated_at, user_id FROM incident
 `
 
 // noinspection SqlDialectInspectionForFile
@@ -27,6 +45,38 @@ func (q *Queries) ListIncidents(ctx context.Context) ([]Incident, error) {
 	var items []Incident
 	for rows.Next() {
 		var i Incident
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUsers = `-- name: ListUsers :many
+SELECT id, power_id, latitude, longtitude, created_at, updated_at FROM users
+`
+
+func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, listUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
 		if err := rows.Scan(
 			&i.ID,
 			&i.PowerID,

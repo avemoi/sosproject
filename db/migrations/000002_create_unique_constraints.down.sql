@@ -1,2 +1,2 @@
 ALTER TABLE incident
-DROP INDEX unique_name;
+DROP constraint unique_name;
