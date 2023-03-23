@@ -15,14 +15,27 @@ import (
 
 func (app *Config) getIncidents(c *gin.Context) {
 
-	res, err := app.Models.db.ListIncidents(context.Background())
-	if err != nil {
-		c.String(200, "We have an error ffs")
+	timeWindow := c.Query("tw")
+	if timeWindow == "" {
+		res, err := app.Models.db.ListIncidents(context.Background())
+		if err != nil {
+			c.JSON(500, gin.H{"error": "We have an error ffs"})
+			return
+		}
+		c.JSON(200, res)
+	} else {
+		res, err := app.Models.db.GetNumberOfIncidents(context.Background(), timeWindow)
+		if err != nil {
+			c.JSON(500, gin.H{"error": "We have an error ffs"})
+			return
+		}
+		if res == nil {
+			c.Status(http.StatusNoContent)
+			return
+		}
+		c.JSON(200, res)
 	}
-	if res == nil {
-		res = make([]db.Incident, 0)
-	}
-	c.JSON(200, res)
+
 }
 
 func (app *Config) postInsident(c *gin.Context) {
@@ -53,7 +66,14 @@ func (app *Config) postInsident(c *gin.Context) {
 
 	fmt.Println(res)
 	fmt.Println("this is a test")
-
+	// If there are more than 1 incident, send a notification
+	//if incidentCount > 1 {
+	//	sendNotification()
+	//}
+	//
+	//c.JSON(200, gin.H{
+	//	"message": "Incident created",
+	//})
 	c.Status(http.StatusCreated)
 }
 
@@ -90,9 +110,9 @@ func (app *Config) UserAuthentication(c *gin.Context) {
 	}
 	// Store to db
 	userParams := db.CreateUserParams{
-		PowerID:    int32(powerid),
-		Latitude:   coordinates.Lat,
-		Longtitude: coordinates.Lng,
+		PowerID:   int32(powerid),
+		Latitude:  coordinates.Lat,
+		Longitude: coordinates.Lng,
 	}
 	res, _ := app.Models.db.CreateUser(context.Background(), userParams)
 	//if err != nil {

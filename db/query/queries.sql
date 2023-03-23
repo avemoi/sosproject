@@ -10,5 +10,8 @@ SELECT * FROM incident;
 SELECT * FROM users;
 
 -- name: GetUser :one
-SELECT power_id, latitude, longtitude
+SELECT power_id, latitude, longitude
 from users where id = ? LIMIT 1;
+
+-- name: GetNumberOfIncidents :many
+SELECT id, user_id FROM incident WHERE created_at >= NOW() - INTERVAL ? MINUTE;

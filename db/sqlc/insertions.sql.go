@@ -28,16 +28,16 @@ const createUser = `-- name: CreateUser :execresult
 INSERT into users (
     power_id,
     latitude,
-    longtitude
+    longitude
 ) VALUES (?, ?, ?)
 `
 
 type CreateUserParams struct {
-	PowerID    int32   `json:"power_id"`
-	Latitude   float64 `json:"latitude"`
-	Longtitude float64 `json:"longtitude"`
+	PowerID   int32   `json:"power_id"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (sql.Result, error) {
-	return q.db.ExecContext(ctx, createUser, arg.PowerID, arg.Latitude, arg.Longtitude)
+	return q.db.ExecContext(ctx, createUser, arg.PowerID, arg.Latitude, arg.Longitude)
 }

@@ -7,23 +7,56 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
+const getNumberOfIncidents = `-- name: GetNumberOfIncidents :many
+SELECT id, user_id FROM incident WHERE created_at >= NOW() - INTERVAL ? MINUTE
+`
+
+type GetNumberOfIncidentsRow struct {
+	ID     int64         `json:"id"`
+	UserID sql.NullInt64 `json:"user_id"`
+}
+
+func (q *Queries) GetNumberOfIncidents(ctx context.Context, dateSUB interface{}) ([]GetNumberOfIncidentsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getNumberOfIncidents, dateSUB)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetNumberOfIncidentsRow
+	for rows.Next() {
+		var i GetNumberOfIncidentsRow
+		if err := rows.Scan(&i.ID, &i.UserID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUser = `-- name: GetUser :one
-SELECT power_id, latitude, longtitude
+SELECT power_id, latitude, longitude
 from users where id = ? LIMIT 1
 `
 
 type GetUserRow struct {
-	PowerID    int32   `json:"power_id"`
-	Latitude   float64 `json:"latitude"`
-	Longtitude float64 `json:"longtitude"`
+	PowerID   int32   `json:"power_id"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
 }
 
 func (q *Queries) GetUser(ctx context.Context, id int64) (GetUserRow, error) {
 	row := q.db.QueryRowContext(ctx, getUser, id)
 	var i GetUserRow
-	err := row.Scan(&i.PowerID, &i.Latitude, &i.Longtitude)
+	err := row.Scan(&i.PowerID, &i.Latitude, &i.Longitude)
 	return i, err
 }
 
@@ -31,7 +64,7 @@ const listIncidents = `-- name: ListIncidents :many
 
 
 
-SELECT id, created_at, updated_at, user_id FROM incident
+SELECT id, user_id, created_at, updated_at FROM incident
 `
 
 // noinspection SqlDialectInspectionForFile
@@ -47,9 +80,9 @@ func (q *Queries) ListIncidents(ctx context.Context) ([]Incident, error) {
 		var i Incident
 		if err := rows.Scan(
 			&i.ID,
+			&i.UserID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.UserID,
 		); err != nil {
 			return nil, err
 		}
@@ -65,7 +98,7 @@ func (q *Queries) ListIncidents(ctx context.Context) ([]Incident, error) {
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, power_id, latitude, longtitude, created_at, updated_at FROM users
+SELECT id, power_id, latitude, longitude, created_at, updated_at FROM users
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
@@ -81,7 +114,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.ID,
 			&i.PowerID,
 			&i.Latitude,
-			&i.Longtitude,
+			&i.Longitude,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 		); err != nil {

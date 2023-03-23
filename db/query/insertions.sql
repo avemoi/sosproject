@@ -12,5 +12,5 @@ INSERT INTO incident (
 INSERT into users (
     power_id,
     latitude,
-    longtitude
+    longitude
 ) VALUES (?, ?, ?)
