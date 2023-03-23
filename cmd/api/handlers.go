@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	db "github.com/avemoi/sosproject/db/sqlc"
 	"github.com/gin-gonic/gin"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 )
@@ -23,18 +26,33 @@ func (app *Config) getIncidents(c *gin.Context) {
 }
 
 func (app *Config) postInsident(c *gin.Context) {
-	//var newInsident db.Incident
-	//if err := c.BindJSON(&newInsident); err != nil {
-	//	return
-	//}
-	//_, err := app.Models.db.CreateInsident(context.Background(), db.CreateInsidentParams{
-	//	PowerID:    newInsident.PowerID,
-	//	Longtitude: newInsident.Longtitude,
-	//	Latitude:   newInsident.Latitude,
-	//})
-	//if err != nil {
-	//	log.Fatal("error", err)
-	//}
+	type userID struct {
+		Id int `json:"user_id"`
+	}
+	var userId userID
+
+	body, err := io.ReadAll(c.Request.Body)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading request body"})
+		return
+	}
+
+	err = json.Unmarshal(body, &userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+
+	res, err := app.Models.db.CreateInsident(context.Background(), sql.NullInt64{
+		Int64: int64(userId.Id),
+		Valid: true,
+	})
+	if err != nil {
+		log.Fatal("error", err)
+	}
+
+	fmt.Println(res)
+	fmt.Println("this is a test")
 
 	c.Status(http.StatusCreated)
 }
@@ -77,5 +95,17 @@ func (app *Config) UserAuthentication(c *gin.Context) {
 		Longtitude: coordinates.Lng,
 	}
 	res, _ := app.Models.db.CreateUser(context.Background(), userParams)
-	c.JSON(200, res)
+	//if err != nil {
+	//	c.JSON(http.StatusConflict, gin.H{"error": "User already exists"})
+	//	return
+	//}
+	userId, err := res.LastInsertId()
+	if err != nil {
+		log.Fatal("error", err)
+	}
+	returnRes := make(map[string]any)
+	returnRes["lat"] = coordinates.Lat
+	returnRes["lng"] = coordinates.Lng
+	returnRes["user_id"] = userId
+	c.JSON(200, returnRes)
 }

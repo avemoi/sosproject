@@ -21,4 +21,5 @@ type Config struct {
 	Models       *models
 	GoogleApiKey string
 	DeddieAddr   string
+	TimeWindow   int
 }
