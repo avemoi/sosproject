@@ -7,16 +7,20 @@ package db
 
 import (
 	"context"
-	"database/sql"
 )
 
 const getNumberOfIncidents = `-- name: GetNumberOfIncidents :many
-SELECT id, user_id FROM incident WHERE created_at >= NOW() - INTERVAL ? MINUTE
+select inc.id as incident_id, usr.id as user_id, usr.latitude ,usr.longitude
+from incident inc
+         join users usr on usr.id = inc.user_id
+where inc.created_at >= NOW() - INTERVAL ? MINUTE
 `
 
 type GetNumberOfIncidentsRow struct {
-	ID     int64         `json:"id"`
-	UserID sql.NullInt64 `json:"user_id"`
+	IncidentID int64   `json:"incident_id"`
+	UserID     int64   `json:"user_id"`
+	Latitude   float64 `json:"latitude"`
+	Longitude  float64 `json:"longitude"`
 }
 
 func (q *Queries) GetNumberOfIncidents(ctx context.Context, dateSUB interface{}) ([]GetNumberOfIncidentsRow, error) {
@@ -28,7 +32,12 @@ func (q *Queries) GetNumberOfIncidents(ctx context.Context, dateSUB interface{})
 	var items []GetNumberOfIncidentsRow
 	for rows.Next() {
 		var i GetNumberOfIncidentsRow
-		if err := rows.Scan(&i.ID, &i.UserID); err != nil {
+		if err := rows.Scan(
+			&i.IncidentID,
+			&i.UserID,
+			&i.Latitude,
+			&i.Longitude,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -83,25 +92,34 @@ const listIncidents = `-- name: ListIncidents :many
 
 
 
-SELECT id, user_id, created_at, updated_at FROM incident
+select inc.id as incident_id, usr.id as user_id, usr.latitude ,usr.longitude
+from incident inc
+         join users usr on usr.id = inc.user_id
 `
+
+type ListIncidentsRow struct {
+	IncidentID int64   `json:"incident_id"`
+	UserID     int64   `json:"user_id"`
+	Latitude   float64 `json:"latitude"`
+	Longitude  float64 `json:"longitude"`
+}
 
 // noinspection SqlDialectInspectionForFile
 // noinspection SqlNoDataSourceInspectionForFile
-func (q *Queries) ListIncidents(ctx context.Context) ([]Incident, error) {
+func (q *Queries) ListIncidents(ctx context.Context) ([]ListIncidentsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listIncidents)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Incident
+	var items []ListIncidentsRow
 	for rows.Next() {
-		var i Incident
+		var i ListIncidentsRow
 		if err := rows.Scan(
-			&i.ID,
+			&i.IncidentID,
 			&i.UserID,
-			&i.CreatedAt,
-			&i.UpdatedAt,
+			&i.Latitude,
+			&i.Longitude,
 		); err != nil {
 			return nil, err
 		}
