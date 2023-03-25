@@ -88,6 +88,53 @@ func (q *Queries) GetUserByPowerId(ctx context.Context, powerID int32) (GetUserB
 	return i, err
 }
 
+const getUserIncidents = `-- name: GetUserIncidents :many
+select inc.id as incident_id, usr.id as user_id, usr.latitude ,usr.longitude
+from incident inc
+         join users usr on usr.id = inc.user_id
+where inc.created_at >= NOW() - INTERVAL ? MINUTE and usr.id=?
+`
+
+type GetUserIncidentsParams struct {
+	DATESUB interface{} `json:"DATE_SUB"`
+	ID      int64       `json:"id"`
+}
+
+type GetUserIncidentsRow struct {
+	IncidentID int64   `json:"incident_id"`
+	UserID     int64   `json:"user_id"`
+	Latitude   float64 `json:"latitude"`
+	Longitude  float64 `json:"longitude"`
+}
+
+func (q *Queries) GetUserIncidents(ctx context.Context, arg GetUserIncidentsParams) ([]GetUserIncidentsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getUserIncidents, arg.DATESUB, arg.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetUserIncidentsRow
+	for rows.Next() {
+		var i GetUserIncidentsRow
+		if err := rows.Scan(
+			&i.IncidentID,
+			&i.UserID,
+			&i.Latitude,
+			&i.Longitude,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listIncidents = `-- name: ListIncidents :many
 
 

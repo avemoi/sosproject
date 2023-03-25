@@ -40,7 +40,7 @@ func main() {
 	gin.SetMode(app.env)
 
 	app.Models = NewRepo(db.New(connDB))
-
+	app.TimeWindow = 15
 	router := app.GetRoutes()
 	router.Run(fmt.Sprintf(":%s", os.Getenv("GINPORT")))
 

@@ -56,6 +56,20 @@ func (app *Config) postInsident(c *gin.Context) {
 		return
 	}
 
+	// Check if user has already created an incident in the time window
+	userIncidentsParams := db.GetUserIncidentsParams{
+		DATESUB: app.TimeWindow,
+		ID:      int64(userId.Id),
+	}
+
+	userIncidents, err := app.Models.db.GetUserIncidents(context.Background(), userIncidentsParams)
+	if err != nil {
+		log.Fatal("error", err)
+	}
+	if userIncidents != nil {
+		c.Status(http.StatusCreated)
+		return
+	}
 	res, err := app.Models.db.CreateInsident(context.Background(), sql.NullInt64{
 		Int64: int64(userId.Id),
 		Valid: true,
@@ -104,7 +118,7 @@ func (app *Config) UserAuthentication(c *gin.Context) {
 	existingUser, err := app.Models.db.GetUserByPowerId(context.Background(), int32(existingPoweridInt))
 
 	// If user exists
-	if err == nil {
+	if err == nil && existingUser.ID != 0 {
 		returnRes := make(map[string]any)
 		returnRes["lat"] = existingUser.Latitude
 		returnRes["lng"] = existingUser.Longitude
