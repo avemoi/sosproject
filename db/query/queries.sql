@@ -31,3 +31,8 @@ select inc.id as incident_id, usr.id as user_id, usr.latitude ,usr.longitude
 from incident inc
          join users usr on usr.id = inc.user_id
 where inc.created_at >= NOW() - INTERVAL ? MINUTE and usr.id=?;
+
+-- name: CountRecentIncidents :one
+select COUNT(*)
+from incident inc
+where inc.created_at >= NOW() - INTERVAL ? MINUTE;

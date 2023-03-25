@@ -9,6 +9,19 @@ import (
 	"context"
 )
 
+const countRecentIncidents = `-- name: CountRecentIncidents :one
+select COUNT(*)
+from incident inc
+where inc.created_at >= NOW() - INTERVAL ? MINUTE
+`
+
+func (q *Queries) CountRecentIncidents(ctx context.Context, dateSUB interface{}) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countRecentIncidents, dateSUB)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const getNumberOfIncidents = `-- name: GetNumberOfIncidents :many
 select inc.id as incident_id, usr.id as user_id, usr.latitude ,usr.longitude
 from incident inc

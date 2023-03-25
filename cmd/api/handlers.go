@@ -80,10 +80,13 @@ func (app *Config) postInsident(c *gin.Context) {
 
 	fmt.Println(res)
 	fmt.Println("this is a test")
+
+	recentIncidents, err := app.Models.db.CountRecentIncidents(context.Background(), app.TimeWindow)
+
 	// If there are more than 1 incident, send a notification
-	//if incidentCount > 1 {
-	//	sendNotification()
-	//}
+	if recentIncidents > 1 {
+		fmt.Println("here")
+	}
 	//
 	//c.JSON(200, gin.H{
 	//	"message": "Incident created",
