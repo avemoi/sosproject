@@ -95,6 +95,24 @@ func (app *Config) UserAuthentication(c *gin.Context) {
 		return
 	}
 
+	existingPoweridInt, err := strconv.Atoi(power.Id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		return
+	}
+	// Check if user already exists using the power id
+	existingUser, err := app.Models.db.GetUserByPowerId(context.Background(), int32(existingPoweridInt))
+
+	// If user exists
+	if err == nil {
+		returnRes := make(map[string]any)
+		returnRes["lat"] = existingUser.Latitude
+		returnRes["lng"] = existingUser.Longitude
+		returnRes["user_id"] = existingUser.ID
+		c.JSON(200, returnRes)
+		return
+	}
+
 	clientAddress, err := app.getAddressFromPowerID(power.Id)
 	if err != nil {
 		c.JSON(500, "error")

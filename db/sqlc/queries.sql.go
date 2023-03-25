@@ -60,6 +60,25 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (GetUserRow, error) {
 	return i, err
 }
 
+const getUserByPowerId = `-- name: GetUserByPowerId :one
+SELECT id, latitude, longitude
+from users
+where power_id = ? LIMIT 1
+`
+
+type GetUserByPowerIdRow struct {
+	ID        int64   `json:"id"`
+	Latitude  float64 `json:"latitude"`
+	Longitude float64 `json:"longitude"`
+}
+
+func (q *Queries) GetUserByPowerId(ctx context.Context, powerID int32) (GetUserByPowerIdRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserByPowerId, powerID)
+	var i GetUserByPowerIdRow
+	err := row.Scan(&i.ID, &i.Latitude, &i.Longitude)
+	return i, err
+}
+
 const listIncidents = `-- name: ListIncidents :many
 
 
