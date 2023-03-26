@@ -10,7 +10,9 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
+	"strings"
 )
 
 func (app *Config) getIncidents(c *gin.Context) {
@@ -91,10 +93,39 @@ func (app *Config) postInsident(c *gin.Context) {
 	// If there are more than 1 incident,
 	// Check clustering and if true --> send a notification
 	if shouldSend == 1 { // && shouldSend() --> rest call to fastapi!!
-		c.JSON(201, gin.H{
-			"send": "1",
-		})
-		return
+		resultString := make([]string, 1)
+		baseUrl := "https://maps.google.com/?q="
+
+		incidents_coordinates, err := app.Models.db.GetNumberOfIncidents(context.Background(), app.TimeWindow)
+
+		if err != nil {
+			c.JSON(201, gin.H{
+				"send":        "1",
+				"coordinates": baseUrl,
+			})
+			return
+
+		} else {
+			// Create the maps url with coordinates
+			// and make it a string for the frontend
+			for _, incident := range incidents_coordinates {
+
+				resultString = append(
+					resultString, url.QueryEscape(fmt.Sprintf("%s%s,%s",
+						baseUrl,
+						strconv.FormatFloat(incident.Latitude, 'f', -1, 64),
+						strconv.FormatFloat(incident.Longitude, 'f', -1, 64),
+					)),
+				)
+			}
+
+			c.JSON(201, gin.H{
+				"send":        "1",
+				"coordinates": strings.Join(resultString[:], ","),
+			})
+			return
+		}
+
 	}
 
 	c.JSON(201, gin.H{
