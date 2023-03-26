@@ -15,11 +15,13 @@ func NewRepo(db *db.Queries) *models {
 }
 
 type Config struct {
-	DB           *sql.DB
-	env          string
-	Wait         *sync.WaitGroup
-	Models       *models
-	GoogleApiKey string
-	DeddieAddr   string
-	TimeWindow   int
+	DB               *sql.DB
+	env              string
+	Wait             *sync.WaitGroup
+	Models           *models
+	GoogleApiKey     string
+	DeddieAddr       string
+	TimeWindow       int
+	ClusteringAddr   string
+	DistanceInMeters int
 }

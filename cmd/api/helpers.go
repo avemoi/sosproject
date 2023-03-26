@@ -91,7 +91,7 @@ func (app *Config) getAddressFromPowerID(powerId string) (clientAddress, error) 
 	}
 	streetNumber, ok := powerSupply["street_number"].(string)
 	if !ok {
-		return clientRes, errors.New("not ok")
+		streetNumber = ""
 
 	}
 	zipCode, ok := powerSupply["zip_code"].(string)
@@ -147,4 +147,29 @@ func (app *Config) getCoordinatesFromAddress(clientAddress clientAddress) (Coord
 	coordinates.Lng = location.Lng
 
 	return coordinates, nil
+}
+
+func (app *Config) getNumberOfClusters() (int, error) {
+	// Make a GET request
+	url := fmt.Sprintf("%s?time_window=%d&distance_in_m=%d", app.ClusteringAddr, app.TimeWindow, app.DistanceInMeters)
+	response, err := http.Get(url)
+	if err != nil {
+		return 0, err
+	}
+	defer response.Body.Close()
+
+	// Check if the request was successful
+	if response.StatusCode != http.StatusOK {
+		log.Fatalf("Failed to fetch data: status code %d", response.StatusCode)
+	}
+
+	// Read the response body
+	body, err := io.ReadAll(response.Body)
+	if err != nil {
+		return 0, err
+	}
+
+	// Convert the response body to a string and print it
+	fmt.Println(string(body))
+	return 2, nil
 }

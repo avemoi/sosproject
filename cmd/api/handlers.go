@@ -82,11 +82,20 @@ func (app *Config) postInsident(c *gin.Context) {
 	fmt.Println("this is a test")
 
 	recentIncidents, err := app.Models.db.CountRecentIncidents(context.Background(), app.TimeWindow)
-
-	// If there are more than 1 incident, send a notification
-	if recentIncidents > 1 {
-		fmt.Println("here")
+	numberOfClusters, err := app.getNumberOfClusters()
+	if err != nil {
+		c.Status(http.StatusInternalServerError)
+		return
 	}
+	fmt.Println(numberOfClusters, recentIncidents)
+	// If there are more than 1 incident,
+	// Check clustering and if true --> send a notification
+	//if recentIncidents > 1 { // && shouldSend() --> rest call to fastapi!!
+	//	fmt.Println("here")
+	//	// return also a variable so that the frontend
+	//	// can open gmail!
+	//}
+
 	//
 	//c.JSON(200, gin.H{
 	//	"message": "Incident created",

@@ -40,7 +40,11 @@ func main() {
 	gin.SetMode(app.env)
 
 	app.Models = NewRepo(db.New(connDB))
+
 	app.TimeWindow = 15
+	app.ClusteringAddr = "http://127.0.0.1:8000"
+	app.DistanceInMeters = 50
+
 	router := app.GetRoutes()
 	router.Run(fmt.Sprintf(":%s", os.Getenv("GINPORT")))
 
