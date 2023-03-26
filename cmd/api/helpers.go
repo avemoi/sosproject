@@ -149,7 +149,7 @@ func (app *Config) getCoordinatesFromAddress(clientAddress clientAddress) (Coord
 	return coordinates, nil
 }
 
-func (app *Config) getNumberOfClusters() (int, error) {
+func (app *Config) shouldSend() (int, error) {
 	// Make a GET request
 	url := fmt.Sprintf("%s?time_window=%d&distance_in_m=%d", app.ClusteringAddr, app.TimeWindow, app.DistanceInMeters)
 	response, err := http.Get(url)
@@ -169,7 +169,13 @@ func (app *Config) getNumberOfClusters() (int, error) {
 		return 0, err
 	}
 
-	// Convert the response body to a string and print it
-	fmt.Println(string(body))
-	return 2, nil
+	var result map[string]int
+
+	err = json.Unmarshal(body, &result)
+	if err != nil {
+		return 0, err
+	}
+
+	return result["send"], nil
+
 }
