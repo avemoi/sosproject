@@ -4,7 +4,7 @@ createdb:
 	docker exec -it sosdbcontainer mysql -u root -pmypassword -e "CREATE DATABASE sosprojectdb;"
 
 dropdb:
-	docker exec -it sosdbcontainer dropdb --username=postgres  sosprojectdb
+	docker exec -it sosdbcontainer mysql -u root -pmypassword -e "DROP DATABASE sosprojectdb;"
 
 migrateup:
 	migrate --path db/migrations --database "mysql://root:mypassword@tcp(127.0.0.1:3308)/sosprojectdb" --verbose up
