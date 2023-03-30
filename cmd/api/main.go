@@ -46,7 +46,7 @@ func main() {
 	app.DistanceInMeters = 50
 
 	router := app.GetRoutes()
-	router.Run(fmt.Sprintf(":%s", os.Getenv("GINPORT")))
+	router.Run(fmt.Sprintf(":%s", os.Getenv("GINPORT_SOS")))
 
 }
 
@@ -61,7 +61,7 @@ func initDB() *sql.DB {
 func connectToDB() *sql.DB {
 	counts := 0
 
-	dsn := os.Getenv("DSN")
+	dsn := os.Getenv("DSN_SOS")
 	fmt.Println("Tryting to ", dsn)
 
 	for {
