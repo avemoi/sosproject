@@ -129,7 +129,8 @@ func (app *Config) getCoordinatesFromAddress(clientAddress clientAddress) (Coord
 	defer resp.Body.Close()
 	// Check if the request was successful (status code 200)
 	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("Unexpected status code: %d", resp.StatusCode)
+		//log.Fatalf("Unexpected status code: %d", resp.StatusCode)
+		return coordinates, errors.New("Wrong power supply number ")
 	}
 	// Read the response body
 	body, err := io.ReadAll(resp.Body)
