@@ -133,31 +133,39 @@ func (app *Config) postInsident(c *gin.Context) {
 	})
 }
 
-func (app *Config) UserAuthentication(c *gin.Context) {
-	type powerId struct {
-		Id string `json:"power_id"`
-	}
-	var power powerId
+type UserInfo struct {
+	Id        string `json:"power_id"`
+	Latitude  string `json:"latitude"`
+	Longitude string `json:"longitude"`
+}
 
+func (app *Config) UserAuthentication(c *gin.Context) {
+
+	var userInfo UserInfo
+
+	// Read request body
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error reading request body"})
 		return
 	}
 
-	err = json.Unmarshal(body, &power)
+	// Request body to struct
+	err = json.Unmarshal(body, &userInfo)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
 
-	existingPoweridInt, err := strconv.Atoi(power.Id)
+	// Convert string power id to int
+	powerIdInt, err := strconv.Atoi(userInfo.Id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
 		return
 	}
+
 	// Check if user already exists using the power id
-	existingUser, err := app.Models.db.GetUserByPowerId(context.Background(), int32(existingPoweridInt))
+	existingUser, err := app.Models.db.GetUserByPowerId(context.Background(), int32(powerIdInt))
 
 	// If user exists
 	if err == nil && existingUser.ID != 0 {
@@ -169,24 +177,29 @@ func (app *Config) UserAuthentication(c *gin.Context) {
 		return
 	}
 
-	clientAddress, err := app.getAddressFromPowerID(power.Id)
-	if err != nil {
-		c.JSON(500, "error")
-	}
-	coordinates, err := app.getCoordinatesFromAddress(clientAddress)
-	if err != nil {
-		c.JSON(500, "error")
-	}
+	// We will get lat and lon directly from app
+	//clientAddress, err := app.getAddressFromPowerID(power.Id)
+	//if err != nil {
+	//	c.JSON(500, "error")
+	//}
+	//coordinates, err := app.getCoordinatesFromAddress(clientAddress)
+	//if err != nil {
+	//	c.JSON(500, "error")
+	//}
 
-	powerid, err := strconv.Atoi(power.Id)
-	if err != nil {
-		c.JSON(500, "error")
-	}
+	//powerid, err := strconv.Atoi(power.Id)
+	//if err != nil {
+	//	c.JSON(500, "error")
+	//}
+
+	// Convert string coordinates to float
+	userLat, _ := strconv.ParseFloat(userInfo.Latitude, 64)
+	userLon, _ := strconv.ParseFloat(userInfo.Longitude, 64)
 	// Store to db
 	userParams := db.CreateUserParams{
-		PowerID:   int32(powerid),
-		Latitude:  coordinates.Lat,
-		Longitude: coordinates.Lng,
+		PowerID:   int32(powerIdInt),
+		Latitude:  userLat,
+		Longitude: userLon,
 	}
 	res, _ := app.Models.db.CreateUser(context.Background(), userParams)
 	//if err != nil {
@@ -198,8 +211,8 @@ func (app *Config) UserAuthentication(c *gin.Context) {
 		log.Fatal("error", err)
 	}
 	returnRes := make(map[string]any)
-	returnRes["lat"] = coordinates.Lat
-	returnRes["lng"] = coordinates.Lng
+	returnRes["lat"] = userInfo.Latitude
+	returnRes["lng"] = userInfo.Longitude
 	returnRes["user_id"] = userId
 	c.JSON(200, returnRes)
 }
